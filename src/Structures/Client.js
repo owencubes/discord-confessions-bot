@@ -6,12 +6,12 @@ const ms = require("ms");
 
 const globPromise = promisify(glob);
 
-module.exports = class TrashCan extends Client {
+module.exports = class ConfessionsClient extends Client {
     constructor() {
-        super({ intents: ["GUILD_MEMBERS", "GUILDS"] });
+        super({ intents: ['DIRECT_MESSAGES', 'GUILDS'], partials: ['CHANNEL'] });
 
         this.embed = (options) => {
-            new MessageEmbed({ ...options })
+            return new MessageEmbed({ ...options })
                 .setColor("GREY");
         };
         this.commands = new Collection();
@@ -32,26 +32,32 @@ module.exports = class TrashCan extends Client {
                 const File = require(file);
                 this.application.commands.create(File);
 
-                this.guilds.cache.get("887691300432937080")?.commands.create(File);
+                this.guilds.cache.get("905562454023602226")?.commands.create(File);
 
                 this.commands.set(File.name, File);
             });
         });
 
+        this.on('messageCreate', (message) => {
+            if(message.author.bot) return
+            require('./Events/messageCreate')(message, this)
+        })
+
         this.on("interactionCreate", (interaction) => {
+               
             if (interaction.isCommand()) {
                 const command = this.commands.get(interaction.commandName);
-                if (command) {
-                    if (command.cooldown) {
-                        if (this.Cooldowns.has(`${command.name}${interaction.user.id}`))
-                            return interaction.reply({
-                                embeds: [
-                                    this.embed(
-                                        {
-                                            description: `There is a cooldown on this command! Please try again in \`${ms(
-                                                this.Cooldowns.get(
-                                                    `${command.name}${interaction.user.id}`
-                                                ) - Date.now(),
+                 if (command) {
+                     if (command.cooldown) {
+                         if (this.Cooldowns.has(`${command.name}${interaction.user.id}`))
+                             return interaction.reply({
+                                 embeds: [
+                                     this.embed(
+                                         {
+                                             description: `There is a cooldown on this command! Please try again in \`${ms(
+                                                 this.Cooldowns.get(
+                                                     `${command.name}${interaction.user.id}`
+                                                 ) - Date.now(),
                                                 { long: true }
                                             )}\``,
                                         },
@@ -68,25 +74,8 @@ module.exports = class TrashCan extends Client {
                             this.Cooldowns.delete(`${command.name}${interaction.user.id}`);
                         }, command.cooldown);
                     }
-
-                    if (
-                        !interaction.member.permissions.has(command.userPermissions || [])
-                    )
-                        return interaction.reply({
-                            embeds: [
-                                this.embed(
-                                    {
-                                        description:
-                                            "you do not have permissions to run this command!",
-                                    },
-                                    interaction
-                                ),
-                            ],
-                            ephemeral: true,
-                        });
-
-                    command?.run(this, interaction);
                 }
+                command.run(this, interaction)
             }
             if (interaction.isContextMenu())
                 this.commands.get(interaction.commandName)?.run(this, interaction);

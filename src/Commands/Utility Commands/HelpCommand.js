@@ -30,7 +30,7 @@ module.exports = {
     interaction.editReply({
       embeds: [
         client.embed(
-          { title: `My Commands`, description: lines },
+          { title: `My Commands`, description: lines.join('\n') },
           interaction
         ),
       ],
