@@ -14,12 +14,17 @@ module.exports = async (userId, client, message) => {
 
     await Promise.all(docs.map(async(doc) => {
         const guild = await client.guilds.fetch(doc.guildId);
-        const user = await guild.members.fetch(userId);
-        const channel = await client.channels.fetch(doc.channelId)
-
-        if(user?.permissionsIn(channel).toArray().includes('SEND_MESSAGES')) {
-            channels.push({ message: message.content, channel: channel.id, guildName: guild.name })
-        }
+        try {
+            const user = await guild.members.fetch(userId);
+            if(user) {
+                const channel = await client.channels.fetch(doc.channelId)
+    
+                if(user?.permissionsIn(channel).toArray().includes('SEND_MESSAGES')) {
+                    channels.push({ message: message.content, channel: channel.id, guildName: guild.name })
+                }
+            }
+        } catch (e) {}
+       
     }))
 
     return channels
